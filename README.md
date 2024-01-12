@@ -1,3 +1,13 @@
+# Optimization for Data Science 2023 (University of Padova)
+
+This repository contains the project done to complete the requirements for the course Optimization for Data Science. The repository was forked from IBM's ZOSVRG implementation to be tested on their pretrained neural network for MNIST classification. 
+
+The algorithms which I implemented are the Faster Zeroth Order Conditional Gradient Method (FZCGS) from the paper "Can Sochastic Zeroth-Order Frank-Wolfe Method COnverge Faster for Non-Convex Problems?" by Hongchang Gao and Heng Huang (Proceedings of the 37th International Conference on Machine Learning, Online PMLR 119, 2020) and the Stochastic Gradient Free Frank-Wolfe (SGFFW) from the paper "Towards Gradient Free and Projection Free Stochastic Optimization" by Anit Sahu, Manzil Zaheer and Soummya Kar (Proceedings of the 22nd International COnference on Artificial Intelligence and Statistics, Japan PMLR Vol 89, 2019).
+
+The implementation of FZCGS and SGFFW can be found in the optimization_methods folder. The report and popwerpoint presentation can be found in the project submission folder.
+
+The original README from the forked repository is below.
+
 # ZOSVRG for Generating Universal Attacks on Black-box Neural Networks
 
 ZOSVRG is the proposed new zeroth-order nonconvex optimization method. This repo presents ZOSVRG's application for generating adversarial attacks on black-box neural networks. It contains a pretrained network model for the MNIST classification task, and a Python implementation for attack generation that can directly be applied to the network model.
