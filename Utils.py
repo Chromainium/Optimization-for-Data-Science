@@ -59,3 +59,41 @@ def generate_attack_data_set(data, model, MGR):
         orig_imgs_id.append(correct_data_indices[sample_index])
 
     return np.array(orig_imgs), np.array(orig_labels), np.array(orig_imgs_id)
+
+def linear_oracle(x, p, r):
+    '''
+    Parameters
+    ----------
+    x : TYPE np array
+        DESCRIPTION.
+    p : TYPE int
+        DESCRIPTION.
+    r: TYPE int
+        DESCRIPTION.
+
+    Returns
+    -------
+    v : TYPE np array
+        DESCRIPTION. Returns v that maximizes v*x.
+
+    '''
+
+    tolerance = 1e-8  # Small tolerance value
+    radius = r
+
+    if p == 1:
+        max_index = np.argmax(np.abs(x))
+        boolean_mask = (np.arange(x.size) == max_index).reshape(x.shape)
+        return np.where(boolean_mask, radius * np.sign(x), np.zeros_like(x))
+    
+    elif p == 2:
+        xnorm = np.linalg.norm(x, ord=2)
+        if xnorm > tolerance:
+            return radius * x / xnorm
+        else:
+            return np.zeros_like(x)
+
+    elif p == np.inf:
+        random_part = radius * (2 * np.random.randint(0, 2, size=x.shape) - 1).astype(x.dtype)
+        deterministic_part = radius * np.sign(x)
+        return np.where(x == 0, random_part, deterministic_part)

@@ -29,21 +29,47 @@ def SGFFW(x0, T, m, stochastic_approximator, MGR, objfunc):
     Distortion_Loss = []
     Attack_Loss = []
     Current_Best_Distortion = []
-    
+
+    start_time = time.time()
     best_delImgAT = x0  # Initialize the best solution
     best_Loss = 1e10
     
+    shp = x0.shape #shape of x0 (28, 28, 1)
     x = x0.copy()
+    x = x.reshape(-1)
+    d = len(x) #dimension of x d=28*28=784
     
     randBatchIdx = np.random.choice(np.arange(0, MGR.parSet['nFunc']), T, replace=True)
     
     for t in range(T):
         gamma_t = 2 / (t + 8)
         # Step 3 and 4: Compute g(xt, yt) and dt based on the chosen stochastic method (KWSA, RDSA, I-RDSA)
-        g, d = objfunc.gradient_estimation(x, gamma_t, m, randBatchIdx, stochastic_approximator)
+        g = np.zeros(shp)
+        grad = objfunc.evaluate(x, randBatchIdx[t:t+1])
         
+        if stochastic_approximator == 'KWSA':
+            c = 2/((d**(1/2))*((t+8)**(1/3)))
+            rho = 4/((t+8)**(2/3))
+            e = np.eye(d)
+            for idx in range(d):
+                g += (objfunc.evaluate(x + c * e[idx,:].reshape(shp),randBatchIdx[t:t+1]) - grad) / c * e[idx,:].reshape(shp)
+        elif stochastic_approximator == 'RDSA':
+            rho = 4/((d**(1/3))*(t+8)**(2/3))
+            c = 2/((d**(3/2))*((t+8)**(1/3)))
+            e = np.random.normal(size=(shp))
+            g = (objfunc.evaluate(x + c * e[:,:,:],randBatchIdx[t:t+1]) - grad) / c * e[:,:,:]
+        else: #stochastic_approximator = I-RDSA
+            rho = 4/(((1+d/m)**(1/3))*(t+8)**(2/3))
+            c = 2*np.sqrt(m)/((d**(3/2))*((t+8)**(1/3)))
+            e = np.random.normal(size=(shp[0],shp[1],m))
+            for idx in range(m):
+                g += (objfunc.evaluate(x + c * e[:,:,idx:idx+1],randBatchIdx[t:t+1]) - grad_x) / c * e[:,:,idx:idx+1]
+            g = g/m
+        gt = g.reshape(-1)
+        dt = (1 - rho) * dt + rho * gt
+
         # Step 5: Compute vt (argmin over the convex set C)
-        vt = LO(d, np.inf, 0.1)
+        vt = LO(dt, np.inf, 0.1) * 4
         
         # Step 6: Update xt        
         x = (1 - gamma_t) * x + gamma_t * vt
@@ -54,6 +80,7 @@ def SGFFW(x0, T, m, stochastic_approximator, MGR, objfunc):
             
         MGR.logHandler.write('Iteration Index: ' + str(t))
         MGR.logHandler.write(' Query_Count: ' + str(objfunc.query_count))
+        MGR.logHandler.write(' Time: ' + str(time.time()-start_time))       
         MGR.logHandler.write(' Loss_Overall: ' + str(objfunc.Loss_Overall))
         MGR.logHandler.write(' Loss_Distortion: ' + str(objfunc.Loss_L2))
         MGR.logHandler.write(' Loss_Attack: ' + str(objfunc.Loss_Attack))
@@ -82,4 +109,6 @@ def SGFFW(x0, T, m, stochastic_approximator, MGR, objfunc):
         
     SGFFW.to_csv('SGFFW Results.csv')
     
+    print(best_delImgAT[:,:,0])
+
     return best_delImgAT
